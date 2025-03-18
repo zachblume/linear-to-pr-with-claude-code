@@ -19,7 +19,6 @@
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0",
-    "@anthropic-ai/sdk": "^0.39.0",
     "@linear/sdk": "^38.0.0",
     "dotenv": "^16.4.7"
   },

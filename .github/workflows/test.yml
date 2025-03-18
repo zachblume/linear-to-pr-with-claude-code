@@ -14,10 +14,16 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
+      - name: Set up Claude CLI
+        run: |
+          # Install Claude CLI (Replace with actual installation command)
+          curl -sL https://github.com/anthropics/anthropic-cli/releases/latest/download/install.sh | bash
+          # Configure Claude CLI (Replace with actual configuration command)
+          echo "${{ secrets.CLAUDE_API_KEY }}" > ~/.config/anthropic/config.json
+      
       - name: Run Linear to PR Action
         uses: ./
         with:
           linear_api_key: ${{ secrets.LINEAR_API_KEY }}
           linear_issue_id: ${{ github.event.inputs.linear_issue_id }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          claude_api_key: ${{ secrets.CLAUDE_API_KEY }}

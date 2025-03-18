@@ -1,13 +1,19 @@
-# Linear to PR with Claude
+# Linear to PR with Claude Code
 
-This GitHub Action automates creating pull requests from Linear issues using Claude AI to analyze the issue and generate an implementation plan.
+This GitHub Action automates creating pull requests from Linear issues using Claude Code CLI to analyze the issue and generate an implementation plan.
 
 ## Features
 
 - Fetches issue details from Linear
-- Uses Claude AI to analyze the issue and generate an implementation plan
+- Uses Claude Code CLI to analyze the issue and generate an implementation plan
 - Creates a new branch for the PR
 - Opens a pull request with the Claude-generated plan
+
+## Requirements
+
+- Claude Code CLI must be installed and configured in your GitHub Actions environment
+- Linear API key for accessing issue details
+- GitHub token for creating branches and PRs
 
 ## Usage
 
@@ -28,13 +34,19 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
+      - name: Set up Claude CLI
+        run: |
+          # Install Claude CLI (Replace with actual installation command)
+          curl -sL https://github.com/anthropics/anthropic-cli/releases/latest/download/install.sh | bash
+          # Configure Claude CLI
+          echo "${{ secrets.CLAUDE_API_KEY }}" > ~/.config/anthropic/config.json
+      
       - name: Linear to PR with Claude
-        uses: your-username/claude-github-action@v1
+        uses: zachblume/linear-to-pr-with-claude-code@v1
         with:
           linear_api_key: ${{ secrets.LINEAR_API_KEY }}
           linear_issue_id: ${{ github.event.inputs.linear_issue_id }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          claude_api_key: ${{ secrets.CLAUDE_API_KEY }}
 ```
 
 ## Inputs
@@ -44,7 +56,6 @@ jobs:
 | `linear_api_key` | Your Linear API key | Yes |
 | `linear_issue_id` | ID of the Linear issue to process | Yes |
 | `github_token` | GitHub token for API access | Yes |
-| `claude_api_key` | Anthropic API key for Claude | Yes |
 
 ## Outputs
 
@@ -57,9 +68,19 @@ jobs:
 
 1. Create the following secrets in your GitHub repository:
    - `LINEAR_API_KEY`: Your Linear API key
-   - `CLAUDE_API_KEY`: Your Anthropic API key for Claude
+   - `CLAUDE_API_KEY`: Your Anthropic API key for Claude CLI
 
-2. Create a workflow file that uses this action, either triggered manually or by other events.
+2. Ensure your workflow includes the steps to install and configure Claude Code CLI.
+
+3. Create a workflow file that uses this action, either triggered manually or by other events.
+
+## Local Testing
+
+To test this action locally:
+
+1. Install Claude Code CLI and configure it
+2. Create a `.env` file based on `.env.example` with your API keys
+3. Run `node test-local.js`
 
 ## License
 

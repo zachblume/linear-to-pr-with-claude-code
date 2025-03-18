@@ -1,7 +1,10 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
 const { LinearClient } = require('@linear/sdk');
-const { Anthropic } = require('@anthropic-ai/sdk');
+const { execSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
 
 async function run() {
   try {
@@ -9,12 +12,10 @@ async function run() {
     const linearApiKey = core.getInput('linear_api_key', { required: true });
     const linearIssueId = core.getInput('linear_issue_id', { required: true });
     const githubToken = core.getInput('github_token', { required: true });
-    const claudeApiKey = core.getInput('claude_api_key', { required: true });
 
     // Initialize clients
     const linearClient = new LinearClient({ apiKey: linearApiKey });
     const octokit = github.getOctokit(githubToken);
-    const anthropic = new Anthropic({ apiKey: claudeApiKey });
 
     // Get repository info
     const context = github.context;
@@ -63,32 +64,61 @@ async function run() {
       sha: sha
     });
 
-    // Ask Claude to generate a plan based on the issue description
-    console.log('Asking Claude to analyze the issue and generate a plan');
-    const claudePrompt = `
-You are a helpful assistant tasked with analyzing a Linear issue and creating a plan to implement it. 
-The issue is described as follows:
+    // Create a temporary directory for Claude Code to work with
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'claude-code-'));
+    console.log(`Created temporary directory: ${tempDir}`);
+
+    // Create a prompt file for Claude Code
+    const promptFilePath = path.join(tempDir, 'prompt.md');
+    fs.writeFileSync(promptFilePath, `
+# Linear Issue Analysis
+
+I need you to analyze a Linear issue and create a plan to implement it. Here are the details:
+
+## Issue Details
 
 Title: ${issueTitle}
 Description: ${issueDescription}
 
-Based on this description, please create:
-1. A concise summary of what needs to be implemented
-2. A step-by-step plan for implementing this feature or fixing this bug
+## Requirements
+
+Based on this issue, please provide:
+
+1. A concise summary of what needs to be implemented (2-3 sentences)
+2. A detailed step-by-step implementation plan
 3. A list of files that likely need to be modified or created
+4. Any potential challenges or considerations
 
-Format your response in a way that would be helpful for a developer implementing this change.
-    `;
+Format your response as Markdown with clear headings.
+`);
 
-    const claudeResponse = await anthropic.messages.create({
-      model: 'claude-3-opus-20240229',
-      max_tokens: 2000,
-      messages: [
-        { role: 'user', content: claudePrompt }
-      ]
-    });
+    // Run Claude Code CLI
+    console.log('Running Claude Code to analyze the issue...');
+    let claudePlan;
+    try {
+      claudePlan = execSync(`claude-cli ${promptFilePath}`, {
+        encoding: 'utf8',
+        maxBuffer: 10 * 1024 * 1024 // 10MB buffer
+      });
+    } catch (err) {
+      // Fallback to claude command if claude-cli is not available
+      try {
+        claudePlan = execSync(`claude ${promptFilePath}`, {
+          encoding: 'utf8',
+          maxBuffer: 10 * 1024 * 1024 // 10MB buffer
+        });
+      } catch (innerErr) {
+        throw new Error(`Failed to run Claude Code CLI: ${innerErr.message}. Make sure claude-cli is installed.`);
+      }
+    }
 
-    const claudePlan = claudeResponse.content[0].text;
+    // Clean up temporary directory
+    try {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+      console.log(`Removed temporary directory: ${tempDir}`);
+    } catch (err) {
+      console.warn(`Warning: Could not remove temporary directory ${tempDir}: ${err.message}`);
+    }
 
     // Create a PR with the Claude-generated plan
     console.log('Creating PR with Claude\'s plan');
@@ -103,7 +133,7 @@ Format your response in a way that would be helpful for a developer implementing
 ${claudePlan}
 
 ---
-This PR was automatically generated from Linear issue ${linearIssueId} using Claude.`,
+This PR was automatically generated from Linear issue ${linearIssueId} using Claude Code.`,
       head: branchName,
       base: defaultBranch
     });
