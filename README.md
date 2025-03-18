@@ -5,7 +5,7 @@ This GitHub Action automates creating pull requests from Linear issues using Cla
 ## Features
 
 - Fetches issue details from Linear
-- Uses Claude Code CLI to analyze the issue and generate an implementation plan
+- Uses Claude Code CLI with extended thinking to analyze the issue and create an implementation plan
 - Creates a new branch for the PR
 - Opens a pull request with the Claude-generated plan
 
@@ -36,10 +36,25 @@ jobs:
       
       - name: Set up Claude CLI
         run: |
-          # Install Claude CLI (Replace with actual installation command)
-          curl -sL https://github.com/anthropics/anthropic-cli/releases/latest/download/install.sh | bash
-          # Configure Claude CLI
-          echo "${{ secrets.CLAUDE_API_KEY }}" > ~/.config/anthropic/config.json
+          # Install the Claude CLI
+          curl -sL "https://anthropic.com/claude-cli/install" | bash -s -- -b ~/.local/bin
+          
+          # Add to PATH for this job
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          
+          # Configure Claude CLI with API key
+          mkdir -p ~/.config/anthropic
+          cat > ~/.config/anthropic/config.json << EOF
+          {
+            "api_key": "${{ secrets.CLAUDE_API_KEY }}"
+          }
+          EOF
+          
+          # Set permissions
+          chmod 600 ~/.config/anthropic/config.json
+          
+          # Verify installation
+          claude --version
       
       - name: Linear to PR with Claude
         uses: zachblume/linear-to-pr-with-claude-code@v1
@@ -80,7 +95,44 @@ To test this action locally:
 
 1. Install Claude Code CLI and configure it
 2. Create a `.env` file based on `.env.example` with your API keys
-3. Run `node test-local.js`
+3. Run `npm run test:local`
+
+## Custom Claude Code Command
+
+This project includes a custom Claude Code slash command that you can use to manually analyze Linear issues:
+
+```bash
+# Inside a Claude Code session
+/project:analyze-issue "Title: Feature X, Description: Implement feature X to do Y"
+```
+
+This will invoke the custom command to analyze the issue and generate an implementation plan.
+
+### Setting Up Custom Commands
+
+To create your own custom commands:
+
+1. Create a `.claude/commands` directory in your project
+2. Add markdown files with your command templates
+3. Use `$ARGUMENTS` placeholder to capture additional input
+
+For example, create `.claude/commands/my-command.md` with:
+```
+Analyze this code: $ARGUMENTS
+```
+
+Then use it in Claude Code with:
+```
+/project:my-command "code to analyze here"
+```
+
+## How It Works
+
+1. The action fetches issue details from Linear using the Linear API
+2. It creates a temporary prompt file for Claude Code
+3. Claude Code with extended thinking analyzes the issue and generates a detailed implementation plan
+4. The action creates a new branch named after the Linear issue
+5. It opens a PR with Claude's analysis and implementation plan
 
 ## License
 

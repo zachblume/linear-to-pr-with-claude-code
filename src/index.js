@@ -106,27 +106,31 @@ Format your response as Markdown with clear headings and bullet points for easy 
     console.log('Running Claude Code to analyze the issue...');
     let claudePlan;
     try {
-      // Try with the 'claude' command first (preferred)
-      claudePlan = execSync(`claude "think deeply about this implementation" ${promptFilePath}`, {
+      // Use the correct claude command format with file input
+      claudePlan = execSync(`claude -p "think deeply about this implementation" "${promptFilePath}"`, {
         encoding: 'utf8',
-        maxBuffer: 10 * 1024 * 1024 // 10MB buffer
+        maxBuffer: 10 * 1024 * 1024, // 10MB buffer
+        stdio: ['pipe', 'pipe', 'pipe']
       });
     } catch (err) {
-      // Try with claude-cli if claude command fails
+      console.warn(`Warning: Error running claude command: ${err.message}`);
+      // Try alternative method with cat
       try {
-        claudePlan = execSync(`claude-cli "think deeply about this implementation" ${promptFilePath}`, {
+        claudePlan = execSync(`cat "${promptFilePath}" | claude -p "think deeply about this implementation"`, {
           encoding: 'utf8',
-          maxBuffer: 10 * 1024 * 1024 // 10MB buffer
+          maxBuffer: 10 * 1024 * 1024, // 10MB buffer
+          stdio: ['pipe', 'pipe', 'pipe']
         });
       } catch (innerErr) {
         // Fallback to basic command without extended thinking
         try {
-          claudePlan = execSync(`claude ${promptFilePath}`, {
+          claudePlan = execSync(`claude "${promptFilePath}"`, {
             encoding: 'utf8',
-            maxBuffer: 10 * 1024 * 1024 // 10MB buffer
+            maxBuffer: 10 * 1024 * 1024, // 10MB buffer
+            stdio: ['pipe', 'pipe', 'pipe']
           });
         } catch (finalErr) {
-          throw new Error(`Failed to run Claude Code CLI: ${finalErr.message}. Make sure claude or claude-cli is installed.`);
+          throw new Error(`Failed to run Claude Code CLI: ${finalErr.message}. Make sure claude is installed and configured properly.`);
         }
       }
     }
