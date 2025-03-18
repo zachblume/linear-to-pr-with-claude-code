@@ -16,10 +16,18 @@ jobs:
       
       - name: Set up Claude CLI
         run: |
-          # Install Claude CLI (Replace with actual installation command)
-          curl -sL https://github.com/anthropics/anthropic-cli/releases/latest/download/install.sh | bash
-          # Configure Claude CLI (Replace with actual configuration command)
-          echo "${{ secrets.CLAUDE_API_KEY }}" > ~/.config/anthropic/config.json
+          # Install the Claude CLI
+          curl -sL "https://anthropic.com/claude-cli/install" | bash -s -- -b ~/.local/bin
+          
+          # Add to PATH for this job
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          
+          # Configure Claude CLI with API key
+          mkdir -p ~/.config/anthropic
+          echo '{"api_key": "${{ secrets.CLAUDE_API_KEY }}"}' > ~/.config/anthropic/config.json
+          
+          # Verify installation
+          claude --version
       
       - name: Run Linear to PR Action
         uses: ./

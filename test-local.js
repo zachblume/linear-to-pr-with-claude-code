@@ -80,44 +80,63 @@ async function run() {
     // Create a prompt file for Claude Code
     const promptFilePath = path.join(tempDir, 'prompt.md');
     fs.writeFileSync(promptFilePath, `
-# Linear Issue Analysis
-
-I need you to analyze a Linear issue and create a plan to implement it. Here are the details:
+# Linear Issue Implementation Plan
 
 ## Issue Details
 
 Title: ${issueTitle}
 Description: ${issueDescription}
 
+## Task
+
+I need you to analyze this Linear issue and create a comprehensive implementation plan. As a senior software engineer, think deeply about the most effective approach to implement this feature or fix this bug.
+
 ## Requirements
 
-Based on this issue, please provide:
+Please provide:
 
-1. A concise summary of what needs to be implemented (2-3 sentences)
-2. A detailed step-by-step implementation plan
-3. A list of files that likely need to be modified or created
-4. Any potential challenges or considerations
+1. **Summary**: A concise explanation of what needs to be implemented (2-3 sentences)
+2. **Implementation Plan**: A detailed step-by-step plan including:
+   - Key components or functions that need to be created or modified
+   - Data models or schemas that need to be updated
+   - API endpoints that need to be added or modified
+   - UI changes if applicable
+3. **File Changes**: A specific list of files that will likely need to be modified or created
+4. **Technical Considerations**: 
+   - Potential edge cases to handle
+   - Performance considerations
+   - Security implications
+   - Testing approach
 
-Format your response as Markdown with clear headings.
+Format your response as Markdown with clear headings and bullet points for easy readability.
 `);
 
-    // Run Claude Code CLI
+    // Run Claude Code CLI with extended thinking
     console.log('Running Claude Code to analyze the issue...');
     let claudePlan;
     try {
-      claudePlan = execSync(`claude-cli ${promptFilePath}`, {
+      // Try with the 'claude' command first (preferred)
+      claudePlan = execSync(`claude "think deeply about this implementation" ${promptFilePath}`, {
         encoding: 'utf8',
         maxBuffer: 10 * 1024 * 1024 // 10MB buffer
       });
     } catch (err) {
-      // Fallback to claude command if claude-cli is not available
+      // Try with claude-cli if claude command fails
       try {
-        claudePlan = execSync(`claude ${promptFilePath}`, {
+        claudePlan = execSync(`claude-cli "think deeply about this implementation" ${promptFilePath}`, {
           encoding: 'utf8',
           maxBuffer: 10 * 1024 * 1024 // 10MB buffer
         });
       } catch (innerErr) {
-        throw new Error(`Failed to run Claude Code CLI: ${innerErr.message}. Make sure claude-cli is installed.`);
+        // Fallback to basic command without extended thinking
+        try {
+          claudePlan = execSync(`claude ${promptFilePath}`, {
+            encoding: 'utf8',
+            maxBuffer: 10 * 1024 * 1024 // 10MB buffer
+          });
+        } catch (finalErr) {
+          throw new Error(`Failed to run Claude Code CLI: ${finalErr.message}. Make sure claude or claude-cli is installed.`);
+        }
       }
     }
 
