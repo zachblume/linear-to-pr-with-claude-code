@@ -1,0 +1,21 @@
+name: 'Linear to PR with Claude'
+description: 'Creates a PR based on a Linear issue using Claude Code'
+inputs:
+  linear_api_key:
+    description: 'Linear API key'
+    required: true
+  linear_issue_id:
+    description: 'Linear issue ID'
+    required: true
+  github_token:
+    description: 'GitHub token'
+    required: true
+  claude_api_key:
+    description: 'Anthropic API key for Claude'
+    required: true
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
+branding:
+  icon: 'git-pull-request'
+  color: 'blue'

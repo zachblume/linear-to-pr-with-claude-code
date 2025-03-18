@@ -1,0 +1,23 @@
+name: Test Action
+
+on:
+  workflow_dispatch:
+    inputs:
+      linear_issue_id:
+        description: 'Linear Issue ID'
+        required: true
+        type: string
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Run Linear to PR Action
+        uses: ./
+        with:
+          linear_api_key: ${{ secrets.LINEAR_API_KEY }}
+          linear_issue_id: ${{ github.event.inputs.linear_issue_id }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          claude_api_key: ${{ secrets.CLAUDE_API_KEY }}

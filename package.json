@@ -1,0 +1,29 @@
+{
+  "name": "claude-github-action",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "ncc build src/index.js -o dist",
+    "prepare": "npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "github",
+    "action",
+    "linear",
+    "claude",
+    "ai"
+  ],
+  "author": "",
+  "license": "MIT",
+  "description": "GitHub Action that creates a PR based on a Linear issue using Claude",
+  "dependencies": {
+    "@actions/core": "^1.11.1",
+    "@actions/github": "^6.0.0",
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@linear/sdk": "^38.0.0"
+  },
+  "devDependencies": {
+    "@vercel/ncc": "^0.38.3"
+  }
+}
