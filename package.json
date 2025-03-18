@@ -5,7 +5,9 @@
   "scripts": {
     "start": "node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "test:local": "node test-local.js"
+    "test:local": "node test-local.js",
+    "test:mock": "node test-mock.js",
+    "test:command": "node test-command.js"
   },
   "keywords": [
     "github",
