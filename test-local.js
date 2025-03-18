@@ -1,24 +1,34 @@
-const core = require('@actions/core');
-const github = require('@actions/github');
+// This script allows you to test the action locally
+// Create a .env file based on .env.example and run with: node test-local.js
+
+require('dotenv').config();
+
 const { LinearClient } = require('@linear/sdk');
+const { Octokit } = require('@octokit/rest');
 const { Anthropic } = require('@anthropic-ai/sdk');
 
 async function run() {
   try {
-    // Get inputs
-    const linearApiKey = core.getInput('linear_api_key', { required: true });
-    const linearIssueId = core.getInput('linear_issue_id', { required: true });
-    const githubToken = core.getInput('github_token', { required: true });
-    const claudeApiKey = core.getInput('claude_api_key', { required: true });
+    // Get inputs from environment variables
+    const linearApiKey = process.env.LINEAR_API_KEY;
+    const linearIssueId = process.env.LINEAR_ISSUE_ID;
+    const githubToken = process.env.GITHUB_TOKEN;
+    const claudeApiKey = process.env.CLAUDE_API_KEY;
+
+    // Check required inputs
+    if (!linearApiKey) throw new Error('LINEAR_API_KEY is required');
+    if (!linearIssueId) throw new Error('LINEAR_ISSUE_ID is required');
+    if (!githubToken) throw new Error('GITHUB_TOKEN is required');
+    if (!claudeApiKey) throw new Error('CLAUDE_API_KEY is required');
 
     // Initialize clients
     const linearClient = new LinearClient({ apiKey: linearApiKey });
-    const octokit = github.getOctokit(githubToken);
+    const octokit = new Octokit({ auth: githubToken });
     const anthropic = new Anthropic({ apiKey: claudeApiKey });
 
     // Get repository info
-    const context = github.context;
-    const repo = context.repo;
+    const owner = process.env.REPO_OWNER || 'zachblume';
+    const repo = process.env.REPO_NAME || 'linear-to-pr-with-claude-code';
 
     // Get issue details from Linear
     console.log(`Fetching Linear issue: ${linearIssueId}`);
@@ -38,8 +48,8 @@ async function run() {
     
     // Get the default branch
     const repoDetails = await octokit.repos.get({
-      owner: repo.owner,
-      repo: repo.repo
+      owner,
+      repo
     });
     
     const defaultBranch = repoDetails.data.default_branch;
@@ -47,8 +57,8 @@ async function run() {
     
     // Get reference to HEAD of default branch
     const refResponse = await octokit.git.getRef({
-      owner: repo.owner,
-      repo: repo.repo,
+      owner,
+      repo,
       ref: `heads/${defaultBranch}`
     });
     
@@ -57,8 +67,8 @@ async function run() {
     // Create a new branch
     console.log(`Creating branch: ${branchName}`);
     await octokit.git.createRef({
-      owner: repo.owner,
-      repo: repo.repo,
+      owner,
+      repo,
       ref: `refs/heads/${branchName}`,
       sha: sha
     });
@@ -93,8 +103,8 @@ Format your response in a way that would be helpful for a developer implementing
     // Create a PR with the Claude-generated plan
     console.log('Creating PR with Claude\'s plan');
     const prResponse = await octokit.pulls.create({
-      owner: repo.owner,
-      repo: repo.repo,
+      owner,
+      repo,
       title: `[Linear ${linearIssueId}] ${issueTitle}`,
       body: `## Linear Issue
 [${linearIssueId}: ${issueTitle}](https://linear.app/issue/${linearIssueId})
@@ -111,13 +121,15 @@ This PR was automatically generated from Linear issue ${linearIssueId} using Cla
     const prUrl = prResponse.data.html_url;
     console.log(`PR created successfully: ${prUrl}`);
     
-    core.setOutput('pr_url', prUrl);
-    core.setOutput('branch_name', branchName);
+    console.log('Outputs:');
+    console.log(`pr_url: ${prUrl}`);
+    console.log(`branch_name: ${branchName}`);
 
   } catch (error) {
-    core.setFailed(error.message);
+    console.error(`Action failed: ${error.message}`);
     console.error(error);
   }
 }
 
+console.log('Running test-local.js...');
 run();

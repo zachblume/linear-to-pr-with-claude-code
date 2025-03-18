@@ -1,10 +1,9 @@
 {
   "name": "claude-github-action",
   "version": "1.0.0",
-  "main": "dist/index.js",
+  "main": "src/index.js",
   "scripts": {
-    "build": "ncc build src/index.js -o dist",
-    "prepare": "npm run build",
+    "start": "node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -21,9 +20,11 @@
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0",
     "@anthropic-ai/sdk": "^0.39.0",
-    "@linear/sdk": "^38.0.0"
+    "@linear/sdk": "^38.0.0",
+    "dotenv": "^16.4.7"
   },
   "devDependencies": {
-    "@vercel/ncc": "^0.38.3"
+    "@octokit/rest": "^21.1.1",
+    "jest": "^29.7.0"
   }
 }
